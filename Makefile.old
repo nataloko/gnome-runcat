@@ -7,9 +7,6 @@ UUID = runcat@kolesnikov.se
 DIST_ARCHIVE = $(UUID).shell-extension.zip
 LOCAL = $(HOME)/.local/share/gnome-shell/extensions
 
-# Attempt to extract gettext-domain from metadata.json, fallback to UUID
-GETTEXT_DOMAIN = $(shell jq -r '.["gettext-domain"] // "$(UUID)"' src/metadata.json 2>/dev/null || echo "$(UUID)")
-
 all_sources = $(shell find src -type f)
 
 typescript_sources = $(shell find src -type f -name '*.ts' -not -name '*.d.ts')
@@ -31,37 +28,17 @@ dist:
 	npm run build
 
 dist/$(DIST_ARCHIVE): dist compile po/messages.pot $(translations) $(all_sources) $(typescript_compiled)
-	@echo "==> Creating staging directory..."
-	@rm -rf dist/staging
-	@mkdir -p dist/staging
-	
-	@echo "==> Copying extension files..."
-	@cp -r .build/* dist/staging/
-	@cp -r src/resources dist/staging/
-	@cp $(stylesheet) dist/staging/
-	@cp src/metadata.json dist/staging/
-	@cp LICENSE dist/staging/
-	
-	@echo "==> Compiling GSettings schemas..."
-	@mkdir -p dist/staging/schemas
-	@cp $(schema) dist/staging/schemas/
-	@glib-compile-schemas --targetdir=dist/staging/schemas/ dist/staging/schemas/
-	
-	@echo "==> Compiling translations..."
-	@for po in $(translations); do \
-		if [ -f "$$po" ]; then \
-			lang=$$(basename "$$po" .po); \
-			mkdir -p "dist/staging/locale/$$lang/LC_MESSAGES"; \
-			msgfmt "$$po" -o "dist/staging/locale/$$lang/LC_MESSAGES/$(GETTEXT_DOMAIN).mo"; \
-		fi; \
-	done
-	
-	@echo "==> Packaging zip archive..."
-	@cd dist/staging && zip -rq ../$(DIST_ARCHIVE) .
-	
-	@echo "==> Cleaning up staging..."
-	@rm -rf dist/staging
-	@echo "==> Build complete: dist/$(DIST_ARCHIVE)"
+	gnome-extensions pack --force \
+		$(addprefix --extra-source=, $(wildcard .build/*.js)) \
+		$(addprefix --extra-source=, $(shell find .build/ -mindepth 1 -type d)) \
+		--extra-source=./$(stylesheet) \
+		--extra-source=./src/metadata.json \
+		--extra-source=./src/resources \
+		--extra-source=./LICENSE \
+		--podir=./po \
+		--schema=./$(schema) \
+		-o dist/
+
 
 po/%.po: po/messages.pot
 	touch $@ && msgmerge --update $@ $^
@@ -90,22 +67,22 @@ clean:
 	rm -rf dist .build
 
 install: uninstall build
-	@echo "==> Installing locally to $(LOCAL)/$(UUID)"
-	@mkdir -p $(LOCAL)/$(UUID)
-	@unzip -q -o dist/$(DIST_ARCHIVE) -d $(LOCAL)/$(UUID)
-	@echo "==> Done. Restart GNOME Shell to apply changes."
+	gnome-extensions install dist/$(DIST_ARCHIVE) --force
+	gnome-extensions enable $(UUID) || true
+	@echo "You need to restart GNOME Shell to apply changes"
 
 uninstall:
-	@echo "==> Removing $(LOCAL)/$(UUID)"
-	@rm -rf $(LOCAL)/$(UUID)
+	gnome-extensions uninstall $(UUID) || true
+
 
 open-prefs:
 	gnome-extensions prefs $(UUID)
 
 spawn-gnome-shell:
 	env MUTTER_DEBUG_DUMMY_MODE_SPECS=1600x800 \
-		MUTTER_DEBUG_DUMMY_MONITOR_SCALES=1 \
+	 	MUTTER_DEBUG_DUMMY_MONITOR_SCALES=1 \
 		dbus-run-session -- gnome-shell --nested --wayland
+
 
 help:
 	@echo -n "Available commands: "
