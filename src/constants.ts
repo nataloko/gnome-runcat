@@ -11,6 +11,20 @@ export const displayingItemsOptions = {
 	CHARACTER_ONLY: 2,
 } as const
 
+export const panelPositionOptions = {
+	LEFT: 0,
+	CENTER: 1,
+	RIGHT: 2,
+} as const
+
+export type PanelPositionOption = (typeof panelPositionOptions)[keyof typeof panelPositionOptions]
+
+export const panelPositionToBoxName: Record<PanelPositionOption, string> = {
+	[panelPositionOptions.LEFT]: 'left',
+	[panelPositionOptions.CENTER]: 'center',
+	[panelPositionOptions.RIGHT]: 'right',
+}
+
 export const enumToDisplayingItems: Record<DisplayingItemsOption, DisplayingItems> = {
 	[displayingItemsOptions.CHARACTER_AND_PERCENTAGE]: { character: true, percentage: true },
 	[displayingItemsOptions.PERCENTAGE_ONLY]: { character: false, percentage: true },
@@ -21,6 +35,7 @@ export const gioSettingsKeys = {
 	IDLE_THRESHOLD: 'idle-threshold',
 	DISPLAYING_ITEMS: 'displaying-items',
 	INVERT_SPEED: 'invert-speed',
+	PANEL_POSITION: 'panel-position',
 	customSystemMonitor: {
 		ENABLED: 'custom-system-monitor-enabled',
 		COMMAND: 'custom-system-monitor-command',

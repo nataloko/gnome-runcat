@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <interface>
     <requires lib="gtk" version="4.0" />
 
@@ -11,13 +11,22 @@
 
                 <child>
                     <object class="AdwComboRow" id="displaying-items">
-                        <property name="title" translatable="yes">Displaying items</property>
+                        <property
+                            name="title"
+                            translatable="yes"
+                        >Displaying items</property>
                         <property name="model">
                             <object class="GtkStringList">
                                 <items>
-                                    <item translatable="yes">Character and percentage</item>
-                                    <item translatable="yes">Percentage only</item>
-                                    <item translatable="yes">Character only</item>
+                                    <item
+                                        translatable="yes"
+                                    >Character and percentage</item>
+                                    <item
+                                        translatable="yes"
+                                    >Percentage only</item>
+                                    <item
+                                        translatable="yes"
+                                    >Character only</item>
                                 </items>
                             </object>
                         </property>
@@ -25,14 +34,48 @@
                 </child>
 
                 <child>
-                    <object class="AdwExpanderRow" id="custom-system-monitor-enabled">
+                    <object class="AdwComboRow" id="panel-position">
+                        <property
+                            name="title"
+                            translatable="yes"
+                        >Panel position</property>
+                        <property name="model">
+                            <object class="GtkStringList">
+                                <items>
+                                    <item translatable="yes">Left</item>
+                                    <item translatable="yes">Center</item>
+                                    <item translatable="yes">Right</item>
+                                </items>
+                            </object>
+                        </property>
+                    </object>
+                </child>
+
+                <child>
+                    <object
+                        class="AdwExpanderRow"
+                        id="custom-system-monitor-enabled"
+                    >
                         <property name="show_enable_switch">True</property>
-                        <property name="title" translatable="yes">Use a custom system monitor</property>
+                        <property
+                            name="title"
+                            translatable="yes"
+                        >Use a custom system monitor</property>
                         <child>
-                            <object class="AdwEntryRow" id="custom-system-monitor-command">
-                                <property name="title" translatable="yes">Command</property>
-                                <property name="text">gnome-system-monitor -r</property>
-                                <property name="show-apply-button">True</property>
+                            <object
+                                class="AdwEntryRow"
+                                id="custom-system-monitor-command"
+                            >
+                                <property
+                                    name="title"
+                                    translatable="yes"
+                                >Command</property>
+                                <property
+                                    name="text"
+                                >gnome-system-monitor -r</property>
+                                <property
+                                    name="show-apply-button"
+                                >True</property>
                             </object>
                         </child>
                     </object>
@@ -46,14 +89,23 @@
 
                 <child>
                     <object class="AdwSwitchRow" id="invert-speed">
-                        <property name="title" translatable="yes">Invert speed</property>
+                        <property
+                            name="title"
+                            translatable="yes"
+                        >Invert speed</property>
                     </object>
                 </child>
 
                 <child>
                     <object class="AdwSpinRow" id="idle-threshold">
-                        <property name="title" translatable="yes">Idle threshold</property>
-                        <property name="subtitle" translatable="yes">Available when speed is not inverted</property>
+                        <property
+                            name="title"
+                            translatable="yes"
+                        >Idle threshold</property>
+                        <property
+                            name="subtitle"
+                            translatable="yes"
+                        >Available when speed is not inverted</property>
                         <property name="adjustment">
                             <object class="GtkAdjustment">
                                 <property name="lower">0</property>
@@ -62,8 +114,12 @@
                                 <property name="page-increment">10</property>
                             </object>
                         </property>
-                        <property name="sensitive" bind-source="invert-speed"
-                                  bind-property="active" bind-flags="sync-create|invert-boolean" />
+                        <property
+                            name="sensitive"
+                            bind-source="invert-speed"
+                            bind-property="active"
+                            bind-flags="sync-create|invert-boolean"
+                        />
                     </object>
                 </child>
             </object>
@@ -71,8 +127,14 @@
 
         <child>
             <object class="AdwPreferencesGroup">
-                <property name="title" translatable="yes">Reset preferences</property>
-                <property name="description" translatable="yes">Reset RunCat preferences to defaults</property>
+                <property
+                    name="title"
+                    translatable="yes"
+                >Reset preferences</property>
+                <property
+                    name="description"
+                    translatable="yes"
+                >Reset RunCat preferences to defaults</property>
                 <property name="header-suffix">
                     <object class="GtkButton" id="reset">
                         <property name="halign">start</property>
@@ -85,7 +147,10 @@
                                 <property name="margin-bottom">6</property>
                                 <child>
                                     <object class="GtkLabel">
-                                        <property name="label" translatable="yes">Reset</property>
+                                        <property
+                                            name="label"
+                                            translatable="yes"
+                                        >Reset</property>
                                     </object>
                                 </child>
                             </object>
@@ -102,13 +167,23 @@
 
     <object class="GtkAboutDialog" id="about-dialog">
         <property name="program-name">GNOME RunCat</property>
-        <property name="authors">Sergei Kolesnikov https://kolesnikov.se/</property>
+        <property
+            name="authors"
+        >Sergei Kolesnikov https://kolesnikov.se/</property>
         <property name="artists">Sergei Kolesnikov, Takuto Nakamura</property>
-        <property name="comments" translatable="yes">The cat tells you the CPU usage by running speed</property>
+        <property
+            name="comments"
+            translatable="yes"
+        >The cat tells you the CPU usage by running speed</property>
         <property name="copyright">© 2020-2025 Sergei Kolesnikov</property>
         <property name="license_type">gpl-3-0</property>
-        <property name="website">https://github.com/win0err/gnome-runcat</property>
-        <property name="website_label" translatable="yes">Visit RunCat's GitHub page</property>
+        <property
+            name="website"
+        >https://github.com/win0err/gnome-runcat</property>
+        <property
+            name="website_label"
+            translatable="yes"
+        >Visit RunCat's GitHub page</property>
         <property name="can-focus">False</property>
         <property name="hide-on-close">True</property>
         <property name="modal">True</property>
@@ -118,11 +193,17 @@
     <menu id="main-menu">
         <section>
             <item>
-                <attribute name="label" translatable="yes">Visit Homepage</attribute>
+                <attribute
+                    name="label"
+                    translatable="yes"
+                >Visit Homepage</attribute>
                 <attribute name="action">prefs.homepage</attribute>
             </item>
             <item>
-                <attribute name="label" translatable="yes">About RunCat</attribute>
+                <attribute
+                    name="label"
+                    translatable="yes"
+                >About RunCat</attribute>
                 <attribute name="action">prefs.about</attribute>
             </item>
         </section>

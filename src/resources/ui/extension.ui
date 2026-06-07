@@ -1,13 +1,17 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <interface>
     <requires lib="gtk" version="4.0" />
 
     <object class="StBoxLayout" id="box">
-        <property name="style-class">panel-status-menu-box runcat-menu</property>
+        <property
+            name="style-class"
+        >panel-status-menu-box runcat-menu</property>
     </object>
 
     <object class="StIcon" id="icon">
-        <property name="style-class">system-status-icon runcat-menu__icon</property>
+        <property
+            name="style-class"
+        >system-status-icon runcat-menu__icon</property>
     </object>
 
     <object class="StLabel" id="label">

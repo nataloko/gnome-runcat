@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <schemalist>
 	<enum id="org.gnome.shell.extensions.runcat.DisplayingItems">
 		<value value="0" nick="character-and-percentage" />
@@ -6,17 +6,26 @@
 		<value value="2" nick="character-only" />
 	</enum>
 
+	<enum id="org.gnome.shell.extensions.runcat.PanelPosition">
+		<value value="0" nick="left" />
+		<value value="1" nick="center" />
+		<value value="2" nick="right" />
+	</enum>
+
 	<schema
-		id="org.gnome.shell.extensions.runcat"
-		path="/org/gnome/shell/extensions/runcat/"
-	>
+        id="org.gnome.shell.extensions.runcat"
+        path="/org/gnome/shell/extensions/runcat/"
+    >
 
 		<key type="i" name="idle-threshold">
 			<default>0</default>
 			<summary>Idle threshold</summary>
 		</key>
 
-		<key name="displaying-items" enum="org.gnome.shell.extensions.runcat.DisplayingItems">
+		<key
+            name="displaying-items"
+            enum="org.gnome.shell.extensions.runcat.DisplayingItems"
+        >
 			<default>'character-only'</default>
 			<summary>Displaying items</summary>
 		</key>
@@ -34,6 +43,14 @@
 		<key name="custom-system-monitor-command" type="s">
 			<default>'gnome-system-monitor -r'</default>
 			<summary>Custom system monitor command</summary>
+		</key>
+
+		<key
+            name="panel-position"
+            enum="org.gnome.shell.extensions.runcat.PanelPosition"
+        >
+			<default>'right'</default>
+			<summary>Panel position</summary>
 		</key>
 	</schema>
 </schemalist>

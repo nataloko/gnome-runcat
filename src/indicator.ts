@@ -1,252 +1,279 @@
-import Gio from 'gi://Gio'
-import Gtk from 'gi://Gtk'
-import GObject from 'gi://GObject'
-import GLib from 'gi://GLib'
-import St from 'gi://St'
+import Gio from "gi://Gio";
+import Gtk from "gi://Gtk";
+import GObject from "gi://GObject";
+import GLib from "gi://GLib";
+import St from "gi://St";
 
-import * as Main from 'resource:///org/gnome/shell/ui/main.js'
-import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js'
-import { trySpawnCommandLine } from 'resource:///org/gnome/shell/misc/util.js'
-import { type PopupMenu, PopupSeparatorMenuItem } from 'resource:///org/gnome/shell/ui/popupMenu.js'
-import { type Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js'
+import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
+import { trySpawnCommandLine } from "resource:///org/gnome/shell/misc/util.js";
+import {
+  type PopupMenu,
+  PopupSeparatorMenuItem,
+} from "resource:///org/gnome/shell/ui/popupMenu.js";
+import {
+  type Extension,
+  gettext as _,
+} from "resource:///org/gnome/shell/extensions/extension.js";
 
 import {
-	SYSTEM_MONITOR_COMMAND,
-	enumToDisplayingItems,
-	gioSettingsKeys,
-	gObjectProperties,
-	gObjectPropertyNames,
-} from './constants.js'
+  SYSTEM_MONITOR_COMMAND,
+  enumToDisplayingItems,
+  gioSettingsKeys,
+  gObjectProperties,
+  gObjectPropertyNames,
+} from "./constants.js";
 
-import { getAnimationInterval, spritesGenerator } from './utils.js'
-import createCpuGenerator, { MAX_CPU_UTILIZATION } from './dataProviders/cpu.js'
-import type { DisplayingItems, DisplayingItemsOption, CharacterState, WithInheritedGObjectParams } from './types'
+import { getAnimationInterval, spritesGenerator } from "./utils.js";
+import createCpuGenerator, {
+  MAX_CPU_UTILIZATION,
+} from "./dataProviders/cpu.js";
+import type {
+  DisplayingItems,
+  DisplayingItemsOption,
+  CharacterState,
+  WithInheritedGObjectParams,
+} from "./types";
 
+export default class RunCatIndicator
+  extends PanelMenu.Button
+  implements WithInheritedGObjectParams<typeof gObjectProperties>
+{
+  declare menu: PopupMenu;
+  declare idleThreshold: number;
+  declare displayingItems: DisplayingItems;
+  declare isSpeedInverted: boolean;
+  declare useCustomSystemMonitor: boolean;
+  declare customSystemMonitorCommand: string;
+  declare currentText: string;
+  declare currentIcon: Gio.Icon;
 
+  static {
+    GObject.registerClass({ Properties: gObjectProperties }, this);
+  }
 
-export default class RunCatIndicator extends PanelMenu.Button
-	implements WithInheritedGObjectParams<typeof gObjectProperties> {
+  #extension: Extension;
+  #sourceIds: Record<string, number> = {};
+  #dataProviders: Record<string, AsyncGenerator> = {
+    cpu: createCpuGenerator(),
+  };
+  #data: { cpu: number } = { cpu: 0 };
+  #icons!: Record<CharacterState, ReturnType<typeof spritesGenerator>>;
+  #formatter = new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 0,
+    style: "percent",
+  });
 
-	declare menu: PopupMenu
-	declare idleThreshold: number
-	declare displayingItems: DisplayingItems
-	declare isSpeedInverted: boolean
-	declare useCustomSystemMonitor: boolean
-	declare customSystemMonitorCommand: string
-	declare currentText: string
-	declare currentIcon: Gio.Icon
+  constructor(extension: Extension) {
+    super(0.5, "RunCat", false);
 
-	static {
-		GObject.registerClass({ Properties: gObjectProperties }, this)
-	}
+    this.#extension = extension;
 
-	#extension: Extension
-	#sourceIds: Record<string, number> = {}
-	#dataProviders: Record<string, AsyncGenerator> = { cpu: createCpuGenerator() }
-	#data: { cpu: number } = { cpu: 0 }
-	#icons!: Record<CharacterState, ReturnType<typeof spritesGenerator>>
-	#formatter = new Intl.NumberFormat(undefined, {
-		maximumFractionDigits: 0,
-		style: 'percent',
-	})
+    this.#initSettingsListeners();
+    this.#initUi();
+    this.#initIcons();
+    this.#initSources(); // async
+  }
 
-	constructor(extension: Extension) {
-		super(0.5, 'RunCat', false)
+  async refreshData() {
+    const { value: cpuValue } = await this.#dataProviders.cpu.next();
 
-		this.#extension = extension
+    this.#data.cpu = cpuValue;
+  }
 
-		this.#initSettingsListeners()
-		this.#initUi()
-		this.#initIcons()
-		this.#initSources() // async
-	}
+  repaintUi() {
+    let utilization = this.#data?.cpu;
+    let isActive = utilization > this.idleThreshold / 100;
 
-	async refreshData() {
-		const { value: cpuValue } = await this.#dataProviders.cpu.next()
+    if (this.isSpeedInverted) {
+      utilization = MAX_CPU_UTILIZATION - utilization;
+      isActive = true; // always active when speed is inverted
+    }
 
-		this.#data.cpu = cpuValue
-	}
+    const characterState: CharacterState = isActive ? "active" : "idle";
+    const [sprite, spritesCount] = this.#icons[characterState].next().value;
 
+    this.currentIcon = sprite;
+    this.currentText = this.#formatter.format(this.#data.cpu);
 
-	repaintUi() {
-		let utilization = this.#data?.cpu
-		let isActive = utilization > this.idleThreshold / 100
+    const animationInterval = getAnimationInterval(utilization, spritesCount);
 
-		if (this.isSpeedInverted) {
-			utilization = MAX_CPU_UTILIZATION - utilization
-			isActive = true  // always active when speed is inverted
-		}
+    this.#sourceIds.repaintUi = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      animationInterval,
+      () => this.repaintUi(),
+    );
 
-		const characterState: CharacterState = isActive ? 'active' : 'idle'
-		const [sprite, spritesCount] = this.#icons[characterState].next().value
+    return GLib.SOURCE_REMOVE;
+  }
 
-		this.currentIcon = sprite
-		this.currentText = this.#formatter.format(this.#data.cpu)
+  #initIcons() {
+    this.#icons = {
+      idle: spritesGenerator(this.#extension.path, "idle"),
+      active: spritesGenerator(this.#extension.path, "active"),
+    };
 
-		const animationInterval = getAnimationInterval(utilization, spritesCount)
+    const [sprite] = this.#icons.idle.next().value;
 
-		this.#sourceIds.repaintUi = GLib.timeout_add(
-			GLib.PRIORITY_DEFAULT,
-			animationInterval,
-			() => this.repaintUi(),
-		)
+    this.currentIcon = sprite;
+  }
 
-		return GLib.SOURCE_REMOVE
-	}
+  #initUi() {
+    const builder = new Gtk.Builder({
+      translationDomain: this.#extension.uuid,
+    });
 
-	#initIcons() {
-		this.#icons = {
-			idle: spritesGenerator(this.#extension.path, 'idle'),
-			active: spritesGenerator(this.#extension.path, 'active'),
-		}
+    builder.add_from_file(`${this.#extension.path}/resources/ui/extension.ui`);
 
-		const [sprite] = this.#icons.idle.next().value
+    const box = builder.get_object<St.BoxLayout>("box");
+    const label = builder.get_object<St.Label>("label");
 
-		this.currentIcon = sprite
-	}
+    this.bind_property(
+      gObjectPropertyNames.currentText,
+      label,
+      "text",
+      GObject.BindingFlags.DEFAULT,
+    );
 
-	#initUi() {
-		const builder = new Gtk.Builder({ translationDomain: this.#extension.uuid })
+    this.bind_property_full(
+      gObjectPropertyNames.displayingItems,
+      label,
+      "visible",
+      GObject.BindingFlags.SYNC_CREATE,
+      // Types are broken, see https://github.com/gjsify/ts-for-gir/issues/154
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (_, { percentage }: DisplayingItems) => [true, percentage] as any,
+      null,
+    );
 
-		builder.add_from_file(`${this.#extension.path}/resources/ui/extension.ui`)
+    const icon = builder.get_object<St.Icon>("icon");
 
-		const box = builder.get_object<St.BoxLayout>('box')
-		const label = builder.get_object<St.Label>('label')
+    this.bind_property(
+      gObjectPropertyNames.currentIcon,
+      icon,
+      "gicon",
+      GObject.BindingFlags.DEFAULT,
+    );
 
-		this.bind_property(
-			gObjectPropertyNames.currentText,
-			label, 'text',
-			GObject.BindingFlags.DEFAULT,
-		)
+    this.bind_property_full(
+      gObjectPropertyNames.displayingItems,
+      icon,
+      "visible",
+      GObject.BindingFlags.SYNC_CREATE,
+      // Types are broken, see https://github.com/gjsify/ts-for-gir/issues/154
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (_, { character }: DisplayingItems) => [true, character] as any,
+      null,
+    );
 
-		this.bind_property_full(
-			gObjectPropertyNames.displayingItems,
-			label, 'visible',
-			GObject.BindingFlags.SYNC_CREATE,
-			// Types are broken, see https://github.com/gjsify/ts-for-gir/issues/154
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(_, { percentage }: DisplayingItems) => [true, percentage] as any,
-			null,
-		)
+    box.add_child(icon);
+    box.add_child(label);
 
-		const icon = builder.get_object<St.Icon>('icon')
+    this.add_child(box);
 
-		this.bind_property(
-			gObjectPropertyNames.currentIcon,
-			icon, 'gicon',
-			GObject.BindingFlags.DEFAULT,
-		)
+    this.menu.addAction(_("Open System Monitor"), () => {
+      const command = this.useCustomSystemMonitor
+        ? this.customSystemMonitorCommand
+        : SYSTEM_MONITOR_COMMAND;
 
-		this.bind_property_full(
-			gObjectPropertyNames.displayingItems,
-			icon, 'visible',
-			GObject.BindingFlags.SYNC_CREATE,
-			// Types are broken, see https://github.com/gjsify/ts-for-gir/issues/154
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(_, { character }: DisplayingItems) => [true, character] as any,
-			null,
-		)
+      try {
+        trySpawnCommandLine(command);
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          Main.notifyError(
+            _("Execution of “%s” failed").format(command),
+            e.message,
+          );
+        }
 
-		box.add_child(icon)
-		box.add_child(label)
+        console.error(e);
+      }
+    });
 
-		this.add_child(box)
+    this.menu.addMenuItem(new PopupSeparatorMenuItem());
+    this.menu.addAction(_("Settings"), () => {
+      try {
+        this.#extension.openPreferences();
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          Main.notifyError(_("Failed to open extension settings"), e.message);
+        }
 
-		this.menu.addAction(
-			_('Open System Monitor'),
-			() => {
-				const command = this.useCustomSystemMonitor
-					? this.customSystemMonitorCommand
-					: SYSTEM_MONITOR_COMMAND
+        console.error(e);
+      }
+    });
+  }
 
-				try {
-					trySpawnCommandLine(command)
-				} catch (e: unknown) {
-					if (e instanceof Error) {
-						Main.notifyError(
-							_('Execution of “%s” failed').format(command),
-							e.message,
-						)
-					}
+  #initSettingsListeners() {
+    const settings = this.#extension.getSettings();
 
-					console.error(e)
-				}
-			},
-		)
+    settings.bind(
+      gioSettingsKeys.INVERT_SPEED,
+      this,
+      gObjectPropertyNames.isSpeedInverted,
+      Gio.SettingsBindFlags.DEFAULT,
+    );
 
-		this.menu.addMenuItem(new PopupSeparatorMenuItem())
-		this.menu.addAction(_('Settings'), () => {
-			try {
-				this.#extension.openPreferences()
-			} catch (e: unknown) {
-				if (e instanceof Error) {
-					Main.notifyError(_('Failed to open extension settings'), e.message)
-				}
+    settings.bind(
+      gioSettingsKeys.IDLE_THRESHOLD,
+      this,
+      gObjectPropertyNames.idleThreshold,
+      Gio.SettingsBindFlags.DEFAULT,
+    );
 
-				console.error(e)
-			}
-		})
-	}
+    settings.bind(
+      gioSettingsKeys.customSystemMonitor.ENABLED,
+      this,
+      gObjectPropertyNames.useCustomSystemMonitor,
+      Gio.SettingsBindFlags.DEFAULT,
+    );
 
-	#initSettingsListeners() {
-		const settings = this.#extension.getSettings()
+    settings.bind(
+      gioSettingsKeys.customSystemMonitor.COMMAND,
+      this,
+      gObjectPropertyNames.customSystemMonitorCommand,
+      Gio.SettingsBindFlags.DEFAULT,
+    );
 
-		settings.bind(
-			gioSettingsKeys.INVERT_SPEED,
-			this, gObjectPropertyNames.isSpeedInverted,
-			Gio.SettingsBindFlags.DEFAULT,
-		)
+    // sync enum that cannot be binded
+    const updateDisplayingItems = () => {
+      const option = settings.get_enum(
+        gioSettingsKeys.DISPLAYING_ITEMS,
+      ) as DisplayingItemsOption;
 
-		settings.bind(
-			gioSettingsKeys.IDLE_THRESHOLD,
-			this, gObjectPropertyNames.idleThreshold,
-			Gio.SettingsBindFlags.DEFAULT,
-		)
+      this.displayingItems = enumToDisplayingItems[option];
+    };
 
-		settings.bind(
-			gioSettingsKeys.customSystemMonitor.ENABLED,
-			this, gObjectPropertyNames.useCustomSystemMonitor,
-			Gio.SettingsBindFlags.DEFAULT,
-		)
+    updateDisplayingItems();
+    settings.connect(
+      `changed::${gioSettingsKeys.DISPLAYING_ITEMS}`,
+      updateDisplayingItems,
+    );
+  }
 
-		settings.bind(
-			gioSettingsKeys.customSystemMonitor.COMMAND,
-			this, gObjectPropertyNames.customSystemMonitorCommand,
-			Gio.SettingsBindFlags.DEFAULT,
-		)
+  async #initSources() {
+    await this.refreshData();
 
-		// sync enum that cannot be binded
-		const updateDisplayingItems = () => {
-			const option = settings.get_enum(gioSettingsKeys.DISPLAYING_ITEMS) as DisplayingItemsOption
+    this.#sourceIds.refreshData = GLib.timeout_add(
+      GLib.PRIORITY_DEFAULT,
+      3_000,
+      () => {
+        this.refreshData();
 
-			this.displayingItems = enumToDisplayingItems[option]
-		}
+        return GLib.SOURCE_CONTINUE;
+      },
+    );
 
-		updateDisplayingItems()
-		settings.connect(`changed::${gioSettingsKeys.DISPLAYING_ITEMS}`, updateDisplayingItems)
-	}
+    this.#sourceIds.repaintUi = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 0, () =>
+      this.repaintUi(),
+    );
+  }
 
-	async #initSources() {
-		await this.refreshData()
+  destroy() {
+    // destroy sources
+    GLib.source_remove(this.#sourceIds.refreshData);
+    GLib.source_remove(this.#sourceIds.repaintUi);
 
-		this.#sourceIds.refreshData = GLib.timeout_add(
-			GLib.PRIORITY_DEFAULT,
-			3_000,
-			() => {
-				this.refreshData()
-
-				return GLib.SOURCE_CONTINUE
-			},
-		)
-
-		this.#sourceIds.repaintUi = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 0, () => this.repaintUi())
-	}
-
-	destroy() {
-		// destroy sources
-		GLib.source_remove(this.#sourceIds.refreshData)
-		GLib.source_remove(this.#sourceIds.repaintUi)
-
-		super.destroy()
-	}
+    super.destroy();
+  }
 }

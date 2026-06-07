@@ -1,29 +1,29 @@
-import Gio from 'gi://Gio'
-import type { CharacterState, SpriteTuple } from './types'
-
+import Gio from "gi://Gio";
+import type { CharacterState, SpriteTuple } from "./types";
 
 export const spritesGenerator = function* (
-	extensionRootPath: string,
-	state: CharacterState,
+  extensionRootPath: string,
+  state: CharacterState,
 ): Generator<SpriteTuple, SpriteTuple, void> {
-	const getPathForIdx = (
-		idx: number,
-	) => `${extensionRootPath}/resources/icons/runcat/${state}/sprite-${idx}-symbolic.svg`
+  const getPathForIdx = (idx: number) =>
+    `${extensionRootPath}/resources/icons/runcat/${state}/sprite-${idx}-symbolic.svg`;
 
-	const sprites: Gio.Icon[] = []
+  const sprites: Gio.Icon[] = [];
 
-	for (
-		let i = 0, path = getPathForIdx(i);
-		Gio.file_new_for_path(path).query_exists(null);
-		i++, path = getPathForIdx(i)
-	) { sprites.push(Gio.icon_new_for_string(path)) }
+  for (
+    let i = 0, path = getPathForIdx(i);
+    Gio.file_new_for_path(path).query_exists(null);
+    i++, path = getPathForIdx(i)
+  ) {
+    sprites.push(Gio.icon_new_for_string(path));
+  }
 
-	while (true) {
-		for (let i = 0; i < sprites.length; i++) {
-			yield [sprites[i], sprites.length]
-		}
-	}
-}
+  while (true) {
+    for (let i = 0; i < sprites.length; i++) {
+      yield [sprites[i], sprites.length];
+    }
+  }
+};
 
 /**
  * Get animation interval in milliseconds.
@@ -37,9 +37,9 @@ export const spritesGenerator = function* (
  * @returns {number} delay between sprites in millisecons
  **/
 export const getAnimationInterval = (
-	cpuUtilization: number,
-	spritesCount: number,
-): number => Math.ceil(
-	(25 / Math.sqrt(cpuUtilization*100 + 30) - 2) * 1_000 / spritesCount,
-)
-
+  cpuUtilization: number,
+  spritesCount: number,
+): number =>
+  Math.ceil(
+    ((25 / Math.sqrt(cpuUtilization * 100 + 30) - 2) * 1_000) / spritesCount,
+  );

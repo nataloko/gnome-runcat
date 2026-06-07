@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gnome-runcat-extension 31\n"
+"Project-Id-Version: gnome-runcat-extension 32\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-25 18:51+0300\n"
+"POT-Creation-Date: 2026-06-07 00:38+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -34,11 +34,11 @@ msgstr ""
 msgid "Failed to open extension settings"
 msgstr ""
 
-#: src/prefs.ts:50
+#: src/prefs.ts:52
 msgid "RunCat Settings"
 msgstr ""
 
-#: src/prefs.ts:140
+#: src/prefs.ts:180
 msgid "Version"
 msgstr ""
 
@@ -62,54 +62,70 @@ msgstr ""
 msgid "Character only"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:30
-msgid "Use a custom system monitor"
+#: src/resources/ui/preferences.ui:29
+msgid "Panel position"
 msgstr ""
 
 #: src/resources/ui/preferences.ui:33
-msgid "Command"
+msgid "Left"
+msgstr ""
+
+#: src/resources/ui/preferences.ui:34
+msgid "Center"
+msgstr ""
+
+#: src/resources/ui/preferences.ui:35
+msgid "Right"
 msgstr ""
 
 #: src/resources/ui/preferences.ui:45
+msgid "Use a custom system monitor"
+msgstr ""
+
+#: src/resources/ui/preferences.ui:48
+msgid "Command"
+msgstr ""
+
+#: src/resources/ui/preferences.ui:60
 msgid "Character"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:49
+#: src/resources/ui/preferences.ui:64
 msgid "Invert speed"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:55
+#: src/resources/ui/preferences.ui:70
 msgid "Idle threshold"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:56
+#: src/resources/ui/preferences.ui:71
 msgid "Available when speed is not inverted"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:74
+#: src/resources/ui/preferences.ui:89
 msgid "Reset preferences"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:75
+#: src/resources/ui/preferences.ui:90
 msgid "Reset RunCat preferences to defaults"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:88
+#: src/resources/ui/preferences.ui:103
 msgid "Reset"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:107
+#: src/resources/ui/preferences.ui:122
 msgid "The cat tells you the CPU usage by running speed"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:111
+#: src/resources/ui/preferences.ui:126
 msgid "Visit RunCat's GitHub page"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:121
+#: src/resources/ui/preferences.ui:136
 msgid "Visit Homepage"
 msgstr ""
 
-#: src/resources/ui/preferences.ui:125
+#: src/resources/ui/preferences.ui:140
 msgid "About RunCat"
 msgstr ""
